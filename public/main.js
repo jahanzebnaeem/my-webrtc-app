@@ -19,19 +19,27 @@ const streamConstraints = {
   video: true
 }
 
+const socket = io()
+
 btnGoRoom.onclick = () => {
   if(inputRoomNumber.value === '') {
     alert("Please type a room name")
   } else {
-    navigator.mediaDevices.getUserMedia(streamConstraints)
-      .then(stream => {
-        localStream = stream
-        localVideo.srcObject = stream
-      })
-      .catch(err => {
-        console.log('An error occured', err)
-      })
+    roomNumber = inputRoomNumber.value
+    socket.emit('create or join', roomNumber)
     divSelectRoom.style = "display: none"
     divConsultingRoom.style = "display: block"
   }
 }
+
+socket.on('created', room => {
+  navigator.mediaDevices.getUserMedia(streamConstraints)
+    .then(stream => {
+      localStream = stream
+      localVideo.srcObject = stream
+      isCaller = true
+    })
+    .catch(err => {
+      console.log('An error occured', err)
+    })
+})
