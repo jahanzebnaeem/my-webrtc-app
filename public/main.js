@@ -43,3 +43,69 @@ socket.on('created', room => {
       console.log('An error occured', err)
     })
 })
+
+socket.on('joined', room => {
+  navigator.mediaDevices.getUserMedia(streamConstraints)
+    .then(stream => {
+      localStream = stream
+      localVideo.srcObject = stream
+      socket.emit('ready', roomNumber)
+    })
+    .catch(err => {
+      console.log('An error occured', err)
+    })
+})
+
+socket.on('ready', () => {
+  if(isCaller) {
+    rtcPeerConnection = new RTCPeerConnection(iceServers)
+    rtcPeerConnection.onicecandidate = onIceCandidate
+    rtcPeerConnection.ontrack = onAddStream
+    rtcPeerConnection.addTrack(localStream.getTracks()[0], localStream)
+    rtcPeerConnection.addTrack(localStream.getTracks()[1], localStream)
+    rtcPeerConnection.createOffer()
+      .then(sessionDescription => {
+        rtcPeerConnection.setLocalDescription(sessionDescription)
+        socket.emit('offer', {
+          type: 'offer',
+          sdp: sessionDescription,
+          room: roomNumber
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+})
+
+socket.on('offer', event => {
+  if(!isCaller) {
+    rtcPeerConnection = new RTCPeerConnection(iceServers)
+    rtcPeerConnection.onicecandidate = onIceCandidate
+    rtcPeerConnection.ontrack = onAddStream
+    rtcPeerConnection.addTrack(localStream.getTracks()[0], localStream)
+    rtcPeerConnection.addTrack(localStream.getTracks()[1], localStream)
+    rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(event))
+    rtcPeerConnection.createAnswer()
+      .then(sessionDescription => {
+        rtcPeerConnection.setLocalDescription(sessionDescription)
+        socket.emit('answer', {
+          type: 'answer',
+          sdp: sessionDescription,
+          room: roomNumber
+        })
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+})
+
+socket.on('answer', event => {
+  rtcPeerConnection.setRemoteDescription(new RTCSessionDescription(event))
+})
+
+function onAddStream(event) {
+  remoteVideo.srcObject = event.streams[0]
+  remoteStreem = event.streams[0]
+}
