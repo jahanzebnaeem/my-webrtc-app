@@ -1,16 +1,16 @@
-const express = require('express');
+const express = require('express')
 // import express from 'express';
 const app = express()
-let http = require('http').Server(app);
+let http = require('http').Server(app)
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3000
 
 let io = require('socket.io')(http)
 
-app.use(express.static('public'));
+app.use(express.static('public'))
 
 http.listen(port, () => {
-  console.log('listening on ', port);
+  console.log('listening on', port)
 })
 
 io.on('connection', socket => {
@@ -34,18 +34,22 @@ io.on('connection', socket => {
   })
 
   socket.on('ready', room => {
-    socket.to(room).emit('ready')
+    socket.broadcast.to(room).emit('ready')
+    // socket.to(room).emit('ready')
   }) 
 
   socket.on('candidate', event => {
-    socket.to(event.room).emit('candidate', event)
+    socket.broadcast.to(event.room).emit('candidate', event)
+    // socket.to(event.room).emit('candidate', event)
   }) 
 
   socket.on('offer', event => {
-    socket.to(event.room).emit('offer', event.sdp)
+    socket.broadcast.to(event.room).emit('offer', event.sdp)
+    // socket.to(event.room).emit('offer', event.sdp)
   }) 
 
   socket.on('ready', event => {
-    socket.to(event.room).emit('answer', event.sdp)
+    socket.broadcast.to(event.room).emit('answer', event.sdp)
+    // socket.to(event.room).emit('answer', event.sdp)
   }) 
 })
