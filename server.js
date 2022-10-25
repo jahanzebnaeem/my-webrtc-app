@@ -13,13 +13,16 @@ http.listen(port, () => {
   console.log('listening on', port)
 })
 
-io.on('connection', socket => {
+io.on('connection', function (socket) {
   console.log('a user connected')
 
   socket.on('create or join', room => {
     console.log('create or join to room', room)
-    const myRoom = io.sockets.adapter.rooms[room] || {length: 0}
-    const numClients = myRoom.length;
+    // const myRoom = io.sockets.adapter.rooms[room] || {length: 0}
+    // const myRoom = io.sockets.adapter.sids.size || 0
+    const myRoom = io.sockets.adapter.rooms.entries.length || 0
+    // const numClients = myRoom.length
+    const numClients = myRoom
     console.log(room, 'has', numClients, 'clients')
 
     if(numClients == 0) {
@@ -34,22 +37,22 @@ io.on('connection', socket => {
   })
 
   socket.on('ready', room => {
-    socket.broadcast.to(room).emit('ready')
-    // socket.to(room).emit('ready')
+    // socket.broadcast.to(room).emit('ready')
+    socket.to(room).emit('ready')
   }) 
 
   socket.on('candidate', event => {
-    socket.broadcast.to(event.room).emit('candidate', event)
-    // socket.to(event.room).emit('candidate', event)
+    // socket.broadcast.to(event.room).emit('candidate', event)
+    socket.to(event.room).emit('candidate', event)
   }) 
 
   socket.on('offer', event => {
-    socket.broadcast.to(event.room).emit('offer', event.sdp)
-    // socket.to(event.room).emit('offer', event.sdp)
+    // socket.broadcast.to(event.room).emit('offer', event.sdp)
+    socket.to(event.room).emit('offer', event.sdp)
   }) 
 
   socket.on('ready', event => {
-    socket.broadcast.to(event.room).emit('answer', event.sdp)
-    // socket.to(event.room).emit('answer', event.sdp)
+    // socket.broadcast.to(event.room).emit('answer', event.sdp)
+    socket.to(event.room).emit('answer', event.sdp)
   }) 
 })

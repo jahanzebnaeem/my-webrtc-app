@@ -1,28 +1,30 @@
 // getting dom elements
-var divSelectRoom = document.getElementById("selectRoom");
-var divConsultingRoom = document.getElementById("consultingRoom");
-var inputRoomNumber = document.getElementById("roomNumber");
-var btnGoRoom = document.getElementById("goRoom");
-var localVideo = document.getElementById("localVideo");
-var remoteVideo = document.getElementById("remoteVideo");
+let divSelectRoom = document.getElementById("selectRoom");
+let divConsultingRoom = document.getElementById("consultingRoom");
+let inputRoomNumber = document.getElementById("roomNumber");
+let btnGoRoom = document.getElementById("goRoom");
+let localVideo = document.getElementById("localVideo");
+let remoteVideo = document.getElementById("remoteVideo");
+let h2CallName = document.getElementById("callName")
+let inputCallName = document.getElementById("inputCallName")
+let btnSetName = document.getElementById("setName")
 
 // variables
-var roomNumber, localStream, remoteStream, rtcPeerConnection, isCaller
-var iceServers = {
+let roomNumber, localStream, remoteStream, rtcPeerConnection, isCaller, dataChannel
+const iceServers = {
   'iceServer': [
     {'urls': 'stun:stun.services.mozilla.com'},
     {'urls': 'stun:stun.l.google.com:19302'}
   ]
 }
-var streamConstraints = {
+const streamConstraints = {
   audio: true,
   video: true
 }
 
+const socket = io()
 
-var socket = io()
-
-btnGoRoom.onclick = function () {
+btnGoRoom.onclick = () => {
   if (inputRoomNumber.value === '') {
     alert("Please type a room name")
   } else {
@@ -33,32 +35,41 @@ btnGoRoom.onclick = function () {
   }
 }
 
+btnSetName.onclick = () => {
+  if (inputCallName.value === '') {
+    alert("Please type a call name")
+  } else {
+    dataChannel.send(inputCallName.value)
+    h2CallName.innerText = inputCallName.value
+  }
+}
+
 // message handlers
-socket.on('created', function (room) {
+socket.on('created', (room) => {
   navigator.mediaDevices.getUserMedia(streamConstraints)
-    .then(function (stream) {
+    .then((stream) => {
       localStream = stream
       localVideo.srcObject = stream
       isCaller = true
     })
-    .catch(function (err) {
-      console.log('An error occured when accessing media devices', err)
+    .catch((error) => {
+      console.log('An error occured when accessing media devices', error)
     })
 })
 
-socket.on('joined', function (room) {
+socket.on('joined', (room) => {
   navigator.mediaDevices.getUserMedia(streamConstraints)
-    .then(function (stream) {
+    .then((stream) => {
       localStream = stream
       localVideo.srcObject = stream
       socket.emit('ready', roomNumber)
     })
-    .catch(function (err) {
+    .catch((err) => {
       console.log('An error occured when accessing media devices', err)
     })
 })
 
-socket.on('candidate', function (event) {
+socket.on('candidate',  (event) => {
   var candidate = new RTCIceCandidate({
     sdpMLineIndex: event.label,
     candidate: event.candidate
@@ -67,7 +78,7 @@ socket.on('candidate', function (event) {
   rtcPeerConnection.addIceCandidate(candidate)
 })
 
-socket.on('ready', function () {
+socket.on('ready',  () => {
   if(isCaller) {
     rtcPeerConnection = new RTCPeerConnection(iceServers)
     rtcPeerConnection.onicecandidate = onIceCandidate
@@ -87,6 +98,8 @@ socket.on('ready', function () {
       .catch(error => {
         console.log(error)
       })
+    dataChannel = rtcPeerConnection.createDataChannel(roomNumber)
+    dataChannel.onmessage = event => { h2CallName.innerText = event.data }
   }
 })
 
@@ -112,6 +125,10 @@ socket.on('offer', function (event) {
       .catch(error => {
         console.log(error)
       })
+    rtcPeerConnection.ondatachannel = event => {
+      dataChannel = event.channel
+      dataChannel.onmessage = event => { h2CallName.innerText = event.data }
+    }
   }
 })
 
