@@ -19,10 +19,9 @@ io.on('connection', function (socket) {
   socket.on('create or join', room => {
     console.log('create or join to room', room)
     // const myRoom = io.sockets.adapter.rooms[room] || {length: 0}
-    // const myRoom = io.sockets.adapter.sids.size || 0
-    const myRoom = io.sockets.adapter.rooms.entries.length || 0
+    const myRoom = io.sockets.adapter.rooms.get(room) || {size: 0}
     // const numClients = myRoom.length
-    const numClients = myRoom
+    const numClients = myRoom.size
     console.log(room, 'has', numClients, 'clients')
 
     if(numClients == 0) {
@@ -34,6 +33,7 @@ io.on('connection', function (socket) {
     } else {
       socket.emit('full', room)
     }
+
   })
 
   socket.on('ready', room => {
@@ -51,7 +51,7 @@ io.on('connection', function (socket) {
     socket.to(event.room).emit('offer', event.sdp)
   }) 
 
-  socket.on('ready', event => {
+  socket.on('answer', event => {
     // socket.broadcast.to(event.room).emit('answer', event.sdp)
     socket.to(event.room).emit('answer', event.sdp)
   }) 
